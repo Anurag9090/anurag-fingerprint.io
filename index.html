@@ -1,0 +1,1255 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fingerprint Authentication System</title>
+    <style>
+        /* Global Styles */
+        :root {
+            --primary-red: #e53935;
+            --primary-dark-red: #c62828;
+            --light-gray: #f5f5f5;
+            --mid-gray: #e0e0e0;
+            --dark-gray: #757575;
+            --black: #212121;
+            --white: #ffffff;
+            --success-green: #43a047;
+            --error-orange: #ef6c00;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--white);
+            color: var(--black);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .new-row {
+            background-color: lightblue;
+            padding: 20px;
+            border-radius: 5px;
+            width: 100%;
+            /* Forces a new row */
+        }
+
+        .container {
+            width: 100%;
+            max-width: 400px;
+            background-color: var(--white);
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            position: relative;
+            padding: 24px;
+            margin: 20px;
+        }
+
+        .screen {
+            display: none;
+        }
+
+        .active {
+            display: block;
+            animation: fadeIn 0.3s ease-in-out;
+        }
+
+        .scan-animation {
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 150px;
+            height: 10px;
+            background: rgba(0, 255, 0, 0.6);
+            border-radius: 50px;
+            animation: scan 2s infinite ease-in-out;
+        }
+
+        @keyframes scan {
+            0% {
+                top: 10%;
+                opacity: 0;
+            }
+
+            50% {
+                top: 50%;
+                opacity: 1;
+            }
+
+            100% {
+                top: 90%;
+                opacity: 0;
+            }
+        }
+
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        h1 {
+            font-size: 24px;
+            text-align: center;
+            margin-bottom: 20px;
+            color: var(--primary-red);
+        }
+
+        h2 {
+            font-size: 20px;
+            text-align: center;
+            margin-bottom: 16px;
+            color: var(--black);
+        }
+
+        p {
+            font-size: 16px;
+            line-height: 1.5;
+            text-align: center;
+            margin-bottom: 16px;
+            color: var(--dark-gray);
+        }
+
+        .btn {
+            display: block;
+            width: 100%;
+            padding: 14px;
+            background-color: var(--primary-red);
+            color: var(--white);
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            margin: 12px 0;
+            transition: background-color 0.2s;
+        }
+
+        .btn:hover {
+            background-color: var(--primary-dark-red);
+        }
+
+        .btn-outlined {
+            background-color: var(--white);
+            color: var(--primary-red);
+            border: 2px solid var(--primary-red);
+        }
+
+        .btn-outlined:hover {
+            background-color: rgba(229, 57, 53, 0.05);
+        }
+
+        .btn-success {
+            background-color: var(--success-green);
+        }
+
+        .btn-success:hover {
+            background-color: #2e7d32;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: var(--black);
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 14px;
+            border: 2px solid var(--mid-gray);
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.2s;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: var(--primary-red);
+        }
+
+        .otp-container {
+            display: flex;
+            justify-content: space-between;
+            margin: 24px 0;
+        }
+
+        .otp-input {
+            width: 46px;
+            height: 56px;
+            text-align: center;
+            font-size: 24px;
+            font-weight: bold;
+            border: 2px solid var(--mid-gray);
+            border-radius: 8px;
+        }
+
+        .otp-input:focus {
+            outline: none;
+            border-color: var(--primary-red);
+        }
+
+        .icon-container {
+            text-align: center;
+            margin: 30px 0;
+            position: relative;
+        }
+
+        .fingerprint-icon {
+            width: 120px;
+            height: 120px;
+            margin: 0 auto;
+            position: relative;
+        }
+
+        .fingerprint-circles {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+
+        .circle {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border: 4px solid var(--mid-gray);
+            border-radius: 50%;
+        }
+
+        .circle-progress {
+            stroke-dasharray: 283;
+            stroke-dashoffset: 283;
+            transition: stroke-dashoffset 0.5s ease-in-out;
+        }
+
+        .timer-text {
+            position: absolute;
+            bottom: -30px;
+            left: 0;
+            right: 0;
+            text-align: center;
+            font-size: 14px;
+            color: var(--dark-gray);
+        }
+
+        .timer-text-otp {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            text-align: center;
+            font-size: 14px;
+            color: var(--dark-gray);
+        }
+
+        .enrollment-progress {
+            display: flex;
+            justify-content: space-around;
+            margin: 24px 0;
+        }
+
+        .progress-circle {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            border: 2px solid var(--primary-red);
+            background-color: var(--white);
+            transition: background-color 0.3s;
+        }
+
+        .progress-circle.filled {
+            background-color: var(--primary-red);
+        }
+
+        .status-message {
+            padding: 16px;
+            border-radius: 8px;
+            margin: 16px 0;
+            font-weight: 600;
+            text-align: center;
+        }
+
+        .success-message {
+            background-color: rgba(67, 160, 71, 0.1);
+            color: var(--success-green);
+        }
+
+        .error-message {
+            background-color: rgba(239, 108, 0, 0.1);
+            color: var(--error-orange);
+        }
+
+        .pulse-animation {
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% {
+                transform: scale(1);
+                opacity: 1;
+            }
+
+            50% {
+                transform: scale(1.05);
+                opacity: 0.8;
+            }
+
+            100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        .loading-spinner {
+            width: 40px;
+            height: 40px;
+            margin: 20px auto;
+            border: 4px solid var(--light-gray);
+            border-top: 4px solid var(--primary-red);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* Specific screens styling */
+        #login-screen .container {
+            padding-top: 40px;
+            padding-bottom: 40px;
+        }
+
+        #success-animation {
+            text-align: center;
+            margin: 30px 0;
+        }
+
+        .checkmark {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            display: block;
+            stroke-width: 6;
+            stroke: var(--success-green);
+            stroke-miterlimit: 10;
+            margin: 10% auto;
+            box-shadow: inset 0 0 0 var(--success-green);
+            animation: fill-checkmark .4s ease-in-out .4s forwards, scale-checkmark .3s ease-in-out .9s both;
+        }
+
+        .checkmark-circle {
+            stroke-dasharray: 166;
+            stroke-dashoffset: 166;
+            stroke-width: 6;
+            stroke-miterlimit: 10;
+            stroke: var(--success-green);
+            fill: none;
+            animation: stroke-checkmark .6s cubic-bezier(0.65, 0, 0.45, 1) forwards;
+        }
+
+        .checkmark-check {
+            transform-origin: 50% 50%;
+            stroke-dasharray: 48;
+            stroke-dashoffset: 48;
+            animation: stroke-checkmark .3s cubic-bezier(0.65, 0, 0.45, 1) .8s forwards;
+        }
+
+        @keyframes stroke-checkmark {
+            100% {
+                stroke-dashoffset: 0;
+            }
+        }
+
+        @keyframes fill-checkmark {
+            100% {
+                box-shadow: inset 0 0 0 30px var(--success-green);
+            }
+        }
+
+        @keyframes scale-checkmark {
+
+            0%,
+            100% {
+                transform: none;
+            }
+
+            50% {
+                transform: scale3d(1.1, 1.1, 1);
+            }
+        }
+
+        .error-icon {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto;
+            position: relative;
+            animation: shake 0.5s ease-in-out;
+        }
+
+        .error-icon .circle {
+            width: 80px;
+            height: 80px;
+            background-color: rgba(239, 108, 0, 0.1);
+            border-radius: 50%;
+        }
+
+        .error-icon .line {
+            position: absolute;
+            width: 40px;
+            height: 6px;
+            background-color: var(--error-orange);
+            border-radius: 3px;
+            top: 37px;
+            left: 20px;
+        }
+
+        .error-icon .line:first-child {
+            transform: rotate(45deg);
+        }
+
+        .error-icon .line:last-child {
+            transform: rotate(-45deg);
+        }
+
+        @keyframes shake {
+
+            0%,
+            100% {
+                transform: translateX(0);
+            }
+
+            10%,
+            30%,
+            50%,
+            70%,
+            90% {
+                transform: translateX(-5px);
+            }
+
+            20%,
+            40%,
+            60%,
+            80% {
+                transform: translateX(5px);
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Login Screen -->
+    <div class="screen active" id="login-screen">
+        <div class="container">
+            <h1>Login</h1>
+            <div class="form-group">
+                <label for="username">Email</label>
+                <input type="text" id="username" class="form-control" placeholder="Enter your username">
+            </div>
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" class="form-control" placeholder="Enter your password">
+            </div>
+            <button class="btn" id="login-btn">Login</button>
+        </div>
+    </div>
+
+    <!-- Fingerprint Choice Screen -->
+    <div class="screen" id="fingerprint-choice-screen">
+        <div class="container">
+            <h1>Fingerprint Authentication</h1>
+            <div class="icon-container">
+                <svg class="fingerprint-icon" viewBox="0 0 463 463" xmlns="http://www.w3.org/2000/svg">
+                    <g>
+                        <path fill="var(--primary-red)"
+                            d="M259.476,280.364V247.5c0-12.958-10.542-23.5-23.5-23.5s-23.5,10.542-23.5,23.5v29.672
+                            c0,35.757-13.173,70.087-37.094,96.665l-32.981,36.646c-2.771,3.079-2.521,7.821,0.558,10.593c3.078,2.771,7.82,2.521,10.592-0.558
+                            l32.981-36.646c26.403-29.338,40.944-67.231,40.944-106.7V247.5c0-4.687,3.813-8.5,8.5-8.5s8.5,3.813,8.5,8.5v32.864
+                            c0,44.003-16.301,86.167-45.901,118.727l-32.149,35.364c-2.786,3.064-2.56,7.809,0.505,10.595c1.437,1.307,3.242,1.95,5.042,1.95
+                            c2.04,0,4.072-0.827,5.552-2.455l32.148-35.364C241.789,373.854,259.476,328.106,259.476,280.364z" />
+                        <path fill="var(--primary-red)"
+                            d="M291.476,247.5c0-30.603-24.897-55.5-55.5-55.5s-55.5,24.897-55.5,55.5v29.672c0,27.839-10.256,54.566-28.879,75.258
+                            l-23.447,26.053c-2.771,3.079-2.521,7.821,0.558,10.593c3.079,2.771,7.82,2.519,10.592-0.558l23.447-26.053
+                            c21.106-23.451,32.73-53.742,32.73-85.293V247.5c0-22.332,18.168-40.5,40.5-40.5c22.332,0,40.5,18.168,40.5,40.5v32.864
+                            c0,51.979-19.256,101.789-54.223,140.252l-27.125,29.839c-2.787,3.064-2.561,7.809,0.504,10.595c1.437,1.307,3.242,1.95,5.042,1.95
+                            c2.04,0,4.072-0.827,5.552-2.455l27.126-29.839c37.481-41.23,58.123-94.622,58.123-150.342V247.5z" />
+                        <path fill="var(--primary-red)"
+                            d="M323.476,247.5c0-48.248-39.252-87.5-87.5-87.5s-87.5,39.252-87.5,87.5v29.672c0,19.92-7.339,39.045-20.665,53.851
+                            l-21.112,23.458c-2.771,3.079-2.521,7.821,0.558,10.593c3.078,2.771,7.821,2.519,10.592-0.558l21.112-23.458
+                            c15.809-17.565,24.515-40.254,24.515-63.886V247.5c0-39.977,32.523-72.5,72.5-72.5s72.5,32.523,72.5,72.5v32.864
+                            c0,59.958-22.212,117.412-62.545,161.777l-7.507,8.258c-2.786,3.065-2.56,7.809,0.505,10.595c1.437,1.306,3.243,1.95,5.042,1.95
+                            c2.04,0,4.072-0.827,5.552-2.455l7.506-8.258c42.848-47.133,66.446-108.169,66.446-171.867V247.5z" />
+                        <path fill="var(--primary-red)" d="M116.476,247.5c0,4.143,3.358,7.5,7.5,7.5s7.5-3.357,7.5-7.5c0-25.255,9.169-49.651,25.819-68.695
+                            c16.495-18.867,39.134-31.205,63.746-34.741c4.1-0.589,6.946-4.391,6.357-8.49c-0.589-4.1-4.394-6.942-8.49-6.357
+                            c-28.16,4.046-54.052,18.15-72.906,39.716C126.962,190.71,116.476,218.613,116.476,247.5z" />
+                        <path fill="var(--primary-red)" d="M131.476,277.172c0-4.143-3.358-7.5-7.5-7.5s-7.5,3.357-7.5,7.5c0,12.002-4.421,23.523-12.449,32.443l-18.779,20.867
+                            c-2.771,3.078-2.521,7.82,0.558,10.592c1.434,1.29,3.227,1.925,5.015,1.925c2.052,0,4.097-0.838,5.577-2.483l18.779-20.866
+                            C125.687,307.971,131.476,292.886,131.476,277.172z" />
+                        <path fill="var(--primary-red)"
+                            d="M340.755,344.123c-4.009-1.044-8.105,1.351-9.155,5.357c-2.769,10.579-6.213,21.096-10.24,31.258
+                            c-1.526,3.851,0.359,8.21,4.21,9.735c0.907,0.359,1.841,0.529,2.761,0.529c2.985,0,5.808-1.795,6.975-4.739
+                            c4.249-10.725,7.884-21.822,10.806-32.986C347.16,349.271,344.761,345.172,340.755,344.123z" />
+                        <path fill="var(--primary-red)" d="M315.791,158.632c-3.081-2.771-7.823-2.517-10.592,0.563s-2.517,7.822,0.563,10.591
+                            c22.061,19.832,34.713,48.157,34.713,77.714v32.864c0,12.473-0.86,25.042-2.557,37.359c-0.565,4.104,2.303,7.888,6.406,8.453
+                            c0.347,0.048,0.692,0.071,1.033,0.071c3.688,0,6.903-2.722,7.42-6.478c1.79-12.993,2.698-26.251,2.698-39.406V247.5
+                            C355.476,213.695,341.011,181.304,315.791,158.632z" />
+                        <path fill="var(--primary-red)" d="M280.729,153.076c1.041,0.496,2.138,0.73,3.219,0.73c2.803,0,5.492-1.579,6.777-4.278c1.781-3.739,0.192-8.215-3.547-9.995
+                            c-10.806-5.145-22.291-8.616-34.136-10.317c-4.106-0.585-7.901,2.258-8.49,6.357s2.257,7.901,6.357,8.49
+                            C261.257,145.55,271.289,148.582,280.729,153.076z" />
+                        <path fill="var(--primary-red)" d="M235.976,96c-2.806,0-5.644,0.078-8.437,0.232c-4.136,0.228-7.304,3.766-7.076,7.901c0.229,4.136,3.763,7.321,7.902,7.075
+                            c2.519-0.139,5.079-0.209,7.61-0.209c75.266,0,136.5,61.233,136.5,136.5v32.864c0,4.143,3.358,7.5,7.5,7.5s7.5-3.357,7.5-7.5V247.5
+                            C387.476,163.963,319.513,96,235.976,96z" />
+                        <path fill="var(--primary-red)" d="M153.972,136.693c1.477,0,2.97-0.436,4.275-1.343c12.478-8.677,26.182-15.155,40.733-19.258
+                            c3.987-1.124,6.308-5.268,5.184-9.254s-5.269-6.304-9.254-5.184c-16.16,4.556-31.376,11.749-45.226,21.379
+                            c-3.401,2.365-4.241,7.039-1.876,10.439C149.265,135.57,151.599,136.693,153.972,136.693z" />
+                        <path fill="var(--primary-red)" d="M99.476,277.172V247.5c0-34.89,13.213-68.118,37.205-93.565c2.841-3.014,2.702-7.76-0.312-10.602
+                            s-7.761-2.701-10.602,0.312C99.14,171.886,84.476,208.77,84.476,247.5v29.672c0,4.083-1.504,8.002-4.234,11.035l-9.248,10.275
+                            c-2.771,3.079-2.521,7.821,0.558,10.592c1.433,1.291,3.227,1.926,5.015,1.926c2.052,0,4.096-0.837,5.577-2.482l9.248-10.275
+                            C96.605,292.449,99.476,284.966,99.476,277.172z" />
+                        <path fill="var(--primary-red)" d="M409.951,189.104c-8.226-24.446-21.299-46.531-38.856-65.642c-2.803-3.05-7.547-3.252-10.597-0.449
+                            c-3.05,2.803-3.251,7.547-0.449,10.598c16.127,17.554,28.134,37.834,35.686,60.276c1.054,3.133,3.976,5.11,7.107,5.11
+                            c0.793,0,1.6-0.127,2.393-0.394C409.16,197.282,411.272,193.029,409.951,189.104z" />
+                        <path fill="var(--primary-red)" d="M295.247,73.822c-3.917-1.341-8.183,0.748-9.524,4.668c-1.341,3.919,0.749,8.183,4.668,9.523
+                            c16.538,5.659,32.065,13.857,46.15,24.369c1.347,1.005,2.92,1.489,4.48,1.489c2.286,0,4.544-1.041,6.017-3.015
+                            c2.478-3.319,1.794-8.019-1.525-10.496C330.176,88.916,313.264,79.986,295.247,73.822z" />
+                        <path fill="var(--primary-red)"
+                            d="M119.442,125.908C150.991,95.659,192.377,79,235.976,79c8.096,0,16.237,0.583,24.196,1.731
+                            c4.103,0.598,7.903-2.252,8.495-6.352c0.592-4.1-2.251-7.902-6.351-8.494C253.648,64.635,244.786,64,235.976,64
+                            c-47.487,0-92.56,18.141-126.915,51.081c-34.248,32.838-54.277,76.905-56.397,124.084c-0.186,4.138,3.018,7.644,7.155,7.829
+                            c0.115,0.006,0.229,0.008,0.343,0.008c3.987,0,7.306-3.14,7.487-7.163C69.594,196.527,87.988,156.066,119.442,125.908z" />
+                        <path fill="var(--primary-red)" d="M235.976,32c-16.772,0-33.485,1.944-49.674,5.778c-4.031,0.954-6.524,4.996-5.57,9.026c0.955,4.03,4.997,6.524,9.027,5.569
+                            C204.817,48.809,220.366,47,235.976,47c54.996,0,106.332,21.911,144.55,61.695c1.473,1.533,3.439,2.305,5.41,2.305
+                            c1.869,0,3.741-0.694,5.195-2.091c2.987-2.87,3.083-7.618,0.213-10.604c-19.913-20.729-43.304-37.036-69.522-48.465
+                            C294.666,38.002,265.783,32,235.976,32z" />
+                        <path fill="var(--primary-red)"
+                            d="M67.507,125.404c1.372,1.074,3.001,1.595,4.619,1.595c2.227,0,4.431-0.987,5.91-2.876
+                            c21.375-27.302,49.515-48.717,81.377-61.932c3.826-1.587,5.642-5.975,4.055-9.801s-5.977-5.644-9.801-4.055
+                            c-34.241,14.201-64.478,37.21-87.441,66.539C63.672,118.137,64.246,122.851,67.507,125.404z" />
+                        <path fill="var(--primary-red)"
+                            d="M131.983,38.725c1.094,0,2.205-0.24,3.255-0.748C166.816,22.73,200.709,15,235.976,15c18.378,0,36.682,2.162,54.401,6.426
+                            c4.025,0.966,8.077-1.51,9.046-5.537c0.969-4.027-1.51-8.078-5.538-9.047C275.019,2.302,255.535,0,235.976,0
+                            c-37.544,0-73.631,8.232-107.259,24.469c-3.73,1.801-5.294,6.285-3.493,10.015C126.517,37.163,129.195,38.725,131.983,38.725z" />
+                        <path fill="var(--primary-red)" d="M321.724,31.383c7.732,3.079,15.385,6.619,22.746,10.52c1.119,0.594,2.321,0.875,3.505,0.875
+                            c2.688,0,5.287-1.449,6.633-3.99c1.939-3.66,0.545-8.199-3.115-10.139c-7.837-4.153-15.986-7.922-24.22-11.201
+                            c-3.849-1.533-8.21,0.345-9.743,4.192C315.998,25.488,317.876,29.851,321.724,31.383z" />
+                    </g>
+                    <!-- <path fill="var(--primary-red)" d="M60,20 C36.8,20 18,38.8 18,62 C18,65.8 20,77.6 23.2,86.2 C24.2,89.4 27.8,90.6 30.6,88.8 C33.4,87 34.2,83.4 33,80.6 C30.4,73.4 28.8,64.4 28.8,62 C28.8,44.6 42.6,30.8 60,30.8 C77.4,30.8 91.2,44.6 91.2,62 C91.2,67.4 90.2,72.6 89.2,75.4 C88.4,78 89.8,80.8 92.2,81.6 C94.6,82.4 97.4,81 98.2,78.6 C99.6,74.8 100.8,68.8 100.8,62 C100.8,38.8 83.2,20 60,20 z M60,39.8 C47.6,39.8 37.8,49.6 37.8,62 C37.8,66 38.6,72 40.2,77.6 C41,80.2 43.8,81.6 46.4,80.8 C49,80 50.4,77.2 49.6,74.6 C48.4,70.2 47.8,65.4 47.8,62 C47.8,55.2 53.2,49.8 60,49.8 C66.8,49.8 72.2,55.2 72.2,62 C72.2,64.4 71.6,69.2 70.4,73.6 C69.6,76.2 71,79 73.6,79.8 C76.2,80.6 79,79.2 79.8,76.6 C81.4,71 82.2,65 82.2,62 C82.2,49.6 72.4,39.8 60,39.8 z M60,59.8 C58.8,59.8 57.6,60.2 56.6,61 C55.6,61.8 55,63 54.8,64.2 C54.4,66.8 56.2,69.4 58.8,69.8 C61.4,70.2 64,68.4 64.4,65.8 C64.8,63.2 63,60.6 60.4,60.2 C60.2,60 60,59.8 60,59.8 z"/> -->
+                </svg>
+            </div>
+            <p>Your account requires fingerprint verification. How would you like to proceed?</p>
+            <button class="btn" id="use-existing-btn">Use Existing Fingerprint</button>
+            <button class="btn btn-outlined" id="update-fingerprint-btn">Update Fingerprint</button>
+        </div>
+    </div>
+
+    <!-- OTP Verification Screen -->
+    <div class="screen" id="otp-verification-screen">
+        <div class="container">
+            <h1>Verify Your Identity</h1>
+            <p>We've sent a 6-digit code to your registered email address. Please enter it below to continue.</p>
+            <div class="otp-container">
+                <input type="text" class="otp-input" maxlength="1" autofocus>
+                <input type="text" class="otp-input" maxlength="1">
+                <input type="text" class="otp-input" maxlength="1">
+                <input type="text" class="otp-input" maxlength="1">
+                <input type="text" class="otp-input" maxlength="1">
+                <input type="text" class="otp-input" maxlength="1">
+            </div>
+            <p class="timer-text-otp">Code expires in: <span id="otp-timer">05:00</span></p>
+            <button class="btn" id="verify-otp-btn">Verify & Continue</button>
+            <button class="btn btn-outlined" id="resend-otp-btn">Resend Code</button>
+        </div>
+    </div>
+
+    <!-- Enrollment Instructions Screen -->
+    <div class="screen" id="enrollment-instructions-screen">
+        <div class="container">
+            <h1>Fingerprint Enrollment</h1>
+            <h2>Follow These Steps</h2>
+            <p>You'll need to place your finger on the sensor 4 times to complete the enrollment process.</p>
+            <div class="icon-container">
+                <svg class="fingerprint-icon pulse-animation" viewBox="0 0 463 463" xmlns="http://www.w3.org/2000/svg">
+                    <!-- <circle class="circle" cx="250" cy="250" r="245" fill="transparent" stroke="var(--mid-gray)" stroke-width="4"></circle> -->
+
+                    <path fill="var(--primary-red)"
+                        d="M259.476,280.364V247.5c0-12.958-10.542-23.5-23.5-23.5s-23.5,10.542-23.5,23.5v29.672 c0,35.757-13.173,70.087-37.094,96.665l-32.981,36.646c-2.771,3.079-2.521,7.821,0.558,10.593c3.078,2.771,7.82,2.521,10.592-0.558 l32.981-36.646c26.403-29.338,40.944-67.231,40.944-106.7V247.5c0-4.687,3.813-8.5,8.5-8.5s8.5,3.813,8.5,8.5v32.864 c0,44.003-16.301,86.167-45.901,118.727l-32.149,35.364c-2.786,3.064-2.56,7.809,0.505,10.595c1.437,1.307,3.242,1.95,5.042,1.95 c2.04,0,4.072-0.827,5.552-2.455l32.148-35.364C241.789,373.854,259.476,328.106,259.476,280.364z">
+                    </path>
+                    <path fill="var(--primary-red)"
+                        d="M291.476,247.5c0-30.603-24.897-55.5-55.5-55.5s-55.5,24.897-55.5,55.5v29.672c0,27.839-10.256,54.566-28.879,75.258 l-23.447,26.053c-2.771,3.079-2.521,7.821,0.558,10.593c3.079,2.771,7.82,2.519,10.592-0.558l23.447-26.053 c21.106-23.451,32.73-53.742,32.73-85.293V247.5c0-22.332,18.168-40.5,40.5-40.5c22.332,0,40.5,18.168,40.5,40.5v32.864 c0,51.979-19.256,101.789-54.223,140.252l-27.125,29.839c-2.787,3.064-2.561,7.809,0.504,10.595c1.437,1.307,3.242,1.95,5.042,1.95 c2.04,0,4.072-0.827,5.552-2.455l27.126-29.839c37.481-41.23,58.123-94.622,58.123-150.342V247.5z">
+                    </path>
+                    <path fill="var(--primary-red)"
+                        d="M323.476,247.5c0-48.248-39.252-87.5-87.5-87.5s-87.5,39.252-87.5,87.5v29.672c0,19.92-7.339,39.045-20.665,53.851 l-21.112,23.458c-2.771,3.079-2.521,7.821,0.558,10.593c3.078,2.771,7.821,2.519,10.592-0.558l21.112-23.458 c15.809-17.565,24.515-40.254,24.515-63.886V247.5c0-39.977,32.523-72.5,72.5-72.5s72.5,32.523,72.5,72.5v32.864 c0,59.958-22.212,117.412-62.545,161.777l-7.507,8.258c-2.786,3.065-2.56,7.809,0.505,10.595c1.437,1.306,3.243,1.95,5.042,1.95 c2.04,0,4.072-0.827,5.552-2.455l7.506-8.258c42.848-47.133,66.446-108.169,66.446-171.867V247.5z">
+                    </path>
+                    <path fill="var(--primary-red)"
+                        d="M116.476,247.5c0,4.143,3.358,7.5,7.5,7.5s7.5-3.357,7.5-7.5c0-25.255,9.169-49.651,25.819-68.695 c16.495-18.867,39.134-31.205,63.746-34.741c4.1-0.589,6.946-4.391,6.357-8.49c-0.589-4.1-4.394-6.942-8.49-6.357 c-28.16,4.046-54.052,18.15-72.906,39.716C126.962,190.71,116.476,218.613,116.476,247.5z">
+                    </path>
+                    <path fill="var(--primary-red)"
+                        d="M131.476,277.172c0-4.143-3.358-7.5-7.5-7.5s-7.5,3.357-7.5,7.5c0,12.002-4.421,23.523-12.449,32.443l-18.779,20.867 c-2.771,3.078-2.521,7.82,0.558,10.592c1.434,1.29,3.227,1.925,5.015,1.925c2.052,0,4.097-0.838,5.577-2.483l18.779-20.866 C125.687,307.971,131.476,292.886,131.476,277.172z">
+                    </path>
+                    <path fill="var(--primary-red)"
+                        d="M340.755,344.123c-4.009-1.044-8.105,1.351-9.155,5.357c-2.769,10.579-6.213,21.096-10.24,31.258 c-1.526,3.851,0.359,8.21,4.21,9.735c0.907,0.359,1.841,0.529,2.761,0.529c2.985,0,5.808-1.795,6.975-4.739 c4.249-10.725,7.884-21.822,10.806-32.986C347.16,349.271,344.761,345.172,340.755,344.123z">
+                    </path>
+                    <path fill="var(--primary-red)"
+                        d="M315.791,158.632c-3.081-2.771-7.823-2.517-10.592,0.563s-2.517,7.822,0.563,10.591 c22.061,19.832,34.713,48.157,34.713,77.714v32.864c0,12.473-0.86,25.042-2.557,37.359c-0.565,4.104,2.303,7.888,6.406,8.453 c0.347,0.048,0.692,0.071,1.033,0.071c3.688,0,6.903-2.722,7.42-6.478c1.79-12.993,2.698-26.251,2.698-39.406V247.5 C355.476,213.695,341.011,181.304,315.791,158.632z">
+                    </path>
+                    <path fill="var(--primary-red)"
+                        d="M280.729,153.076c1.041,0.496,2.138,0.73,3.219,0.73c2.803,0,5.492-1.579,6.777-4.278c1.781-3.739,0.192-8.215-3.547-9.995 c-10.806-5.145-22.291-8.616-34.136-10.317c-4.106-0.585-7.901,2.258-8.49,6.357s2.257,7.901,6.357,8.49 C261.257,145.55,271.289,148.582,280.729,153.076z">
+                    </path>
+                    <path fill="var(--primary-red)"
+                        d="M235.976,96c-2.806,0-5.644,0.078-8.437,0.232c-4.136,0.228-7.304,3.766-7.076,7.901c0.229,4.136,3.763,7.321,7.902,7.075 c2.519-0.139,5.079-0.209,7.61-0.209c75.266,0,136.5,61.233,136.5,136.5v32.864c0,4.143,3.358,7.5,7.5,7.5s7.5-3.357,7.5-7.5V247.5 C387.476,163.963,319.513,96,235.976,96z">
+                    </path>
+                    <path fill="var(--primary-red)"
+                        d="M153.972,136.693c1.477,0,2.97-0.436,4.275-1.343c12.478-8.677,26.182-15.155,40.733-19.258 c3.987-1.124,6.308-5.268,5.184-9.254s-5.269-6.304-9.254-5.184c-16.16,4.556-31.376,11.749-45.226,21.379 c-3.401,2.365-4.241,7.039-1.876,10.439C149.265,135.57,151.599,136.693,153.972,136.693z">
+                    </path>
+                    <path fill="var(--primary-red)"
+                        d="M99.476,277.172V247.5c0-34.89,13.213-68.118,37.205-93.565c2.841-3.014,2.702-7.76-0.312-10.602 s-7.761-2.701-10.602,0.312C99.14,171.886,84.476,208.77,84.476,247.5v29.672c0,4.083-1.504,8.002-4.234,11.035l-9.248,10.275 c-2.771,3.079-2.521,7.821,0.558,10.592c1.433,1.291,3.227,1.926,5.015,1.926c2.052,0,4.096-0.837,5.577-2.482l9.248-10.275 C96.605,292.449,99.476,284.966,99.476,277.172z">
+                    </path>
+                    <path fill="var(--primary-red)"
+                        d="M409.951,189.104c-8.226-24.446-21.299-46.531-38.856-65.642c-2.803-3.05-7.547-3.252-10.597-0.449 c-3.05,2.803-3.251,7.547-0.449,10.598c16.127,17.554,28.134,37.834,35.686,60.276c1.054,3.133,3.976,5.11,7.107,5.11 c0.793,0,1.6-0.127,2.393-0.394C409.16,197.282,411.272,193.029,409.951,189.104z">
+                    </path>
+                    <path fill="var(--primary-red)"
+                        d="M295.247,73.822c-3.917-1.341-8.183,0.748-9.524,4.668c-1.341,3.919,0.749,8.183,4.668,9.523 c16.538,5.659,32.065,13.857,46.15,24.369c1.347,1.005,2.92,1.489,4.48,1.489c2.286,0,4.544-1.041,6.017-3.015 c2.478-3.319,1.794-8.019-1.525-10.496C330.176,88.916,313.264,79.986,295.247,73.822z">
+                    </path>
+                    <path fill="var(--primary-red)"
+                        d="M119.442,125.908C150.991,95.659,192.377,79,235.976,79c8.096,0,16.237,0.583,24.196,1.731 c4.103,0.598,7.903-2.252,8.495-6.352c0.592-4.1-2.251-7.902-6.351-8.494C253.648,64.635,244.786,64,235.976,64 c-47.487,0-92.56,18.141-126.915,51.081c-34.248,32.838-54.277,76.905-56.397,124.084c-0.186,4.138,3.018,7.644,7.155,7.829 c0.115,0.006,0.229,0.008,0.343,0.008c3.987,0,7.306-3.14,7.487-7.163C69.594,196.527,87.988,156.066,119.442,125.908z">
+                    </path>
+                    <path fill="var(--primary-red)"
+                        d="M235.976,32c-16.772,0-33.485,1.944-49.674,5.778c-4.031,0.954-6.524,4.996-5.57,9.026c0.955,4.03,4.997,6.524,9.027,5.569 C204.817,48.809,220.366,47,235.976,47c54.996,0,106.332,21.911,144.55,61.695c1.473,1.533,3.439,2.305,5.41,2.305 c1.869,0,3.741-0.694,5.195-2.091c2.987-2.87,3.083-7.618,0.213-10.604c-19.913-20.729-43.304-37.036-69.522-48.465 C294.666,38.002,265.783,32,235.976,32z">
+                    </path>
+                    <path fill="var(--primary-red)"
+                        d="M67.507,125.404c1.372,1.074,3.001,1.595,4.619,1.595c2.227,0,4.431-0.987,5.91-2.876 c21.375-27.302,49.515-48.717,81.377-61.932c3.826-1.587,5.642-5.975,4.055-9.801s-5.977-5.644-9.801-4.055 c-34.241,14.201-64.478,37.21-87.441,66.539C63.672,118.137,64.246,122.851,67.507,125.404z">
+                    </path>
+                    <path fill="var(--primary-red)"
+                        d="M131.983,38.725c1.094,0,2.205-0.24,3.255-0.748C166.816,22.73,200.709,15,235.976,15c18.378,0,36.682,2.162,54.401,6.426 c4.025,0.966,8.077-1.51,9.046-5.537c0.969-4.027-1.51-8.078-5.538-9.047C275.019,2.302,255.535,0,235.976,0 c-37.544,0-73.631,8.232-107.259,24.469c-3.73,1.801-5.294,6.285-3.493,10.015C126.517,37.163,129.195,38.725,131.983,38.725z">
+                    </path>
+                    <path fill="var(--primary-red)"
+                        d="M321.724,31.383c7.732,3.079,15.385,6.619,22.746,10.52c1.119,0.594,2.321,0.875,3.505,0.875 c2.688,0,5.287-1.449,6.633-3.99c1.939-3.66,0.545-8.199-3.115-10.139c-7.837-4.153-15.986-7.922-24.22-11.201 c-3.849-1.533-8.21,0.345-9.743,4.192C315.998,25.488,317.876,29.851,321.724,31.383z">
+                    </path>
+
+                    <!-- <path fill="var(--primary-red)" d="M60,20 C36.8,20 18,38.8 18,62 C18,65.8 20,77.6 23.2,86.2 C24.2,89.4 27.8,90.6 30.6,88.8 C33.4,87 34.2,83.4 33,80.6 C30.4,73.4 28.8,64.4 28.8,62 C28.8,44.6 42.6,30.8 60,30.8 C77.4,30.8 91.2,44.6 91.2,62 C91.2,67.4 90.2,72.6 89.2,75.4 C88.4,78 89.8,80.8 92.2,81.6 C94.6,82.4 97.4,81 98.2,78.6 C99.6,74.8 100.8,68.8 100.8,62 C100.8,38.8 83.2,20 60,20 z M60,39.8 C47.6,39.8 37.8,49.6 37.8,62 C37.8,66 38.6,72 40.2,77.6 C41,80.2 43.8,81.6 46.4,80.8 C49,80 50.4,77.2 49.6,74.6 C48.4,70.2 47.8,65.4 47.8,62 C47.8,55.2 53.2,49.8 60,49.8 C66.8,49.8 72.2,55.2 72.2,62 C72.2,64.4 71.6,69.2 70.4,73.6 C69.6,76.2 71,79 73.6,79.8 C76.2,80.6 79,79.2 79.8,76.6 C81.4,71 82.2,65 82.2,62 C82.2,49.6 72.4,39.8 60,39.8 z M60,59.8 C58.8,59.8 57.6,60.2 56.6,61 C55.6,61.8 55,63 54.8,64.2 C54.4,66.8 56.2,69.4 58.8,69.8 C61.4,70.2 64,68.4 64.4,65.8 C64.8,63.2 63,60.6 60.4,60.2 C60.2,60 60,59.8 60,59.8 z"/> -->
+                </svg>
+            </div>
+            <p>Make sure your finger is clean and dry. Place it firmly on the sensor when prompted.</p>
+            <button class="btn" id="start-enrollment-btn">Start Enrollment</button>
+        </div>
+    </div>
+
+    <!-- Enrollment Process Screen -->
+    <div class="screen" id="enrollment-process-screen">
+        <div class="container">
+            <h1>Fingerprint Enrollment</h1>
+            <h2>Place Your Finger on the Sensor</h2>
+            <div class="icon-container">
+                <svg class="fingerprint-icon pulse-animation" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+                    <circle class="circle" cx="60" cy="60" r="55" fill="transparent" stroke="var(--mid-gray)" stroke-width="4"></circle>
+                    <path fill="var(--primary-red)" d="M60,20 C36.8,20 18,38.8 18,62 C18,65.8 20,77.6 23.2,86.2 C24.2,89.4 27.8,90.6 30.6,88.8 C33.4,87 34.2,83.4 33,80.6 C30.4,73.4 28.8,64.4 28.8,62 C28.8,44.6 42.6,30.8 60,30.8 C77.4,30.8 91.2,44.6 91.2,62 C91.2,67.4 90.2,72.6 89.2,75.4 C88.4,78 89.8,80.8 92.2,81.6 C94.6,82.4 97.4,81 98.2,78.6 C99.6,74.8 100.8,68.8 100.8,62 C100.8,38.8 83.2,20 60,20 z M60,39.8 C47.6,39.8 37.8,49.6 37.8,62 C37.8,66 38.6,72 40.2,77.6 C41,80.2 43.8,81.6 46.4,80.8 C49,80 50.4,77.2 49.6,74.6 C48.4,70.2 47.8,65.4 47.8,62 C47.8,55.2 53.2,49.8 60,49.8 C66.8,49.8 72.2,55.2 72.2,62 C72.2,64.4 71.6,69.2 70.4,73.6 C69.6,76.2 71,79 73.6,79.8 C76.2,80.6 79,79.2 79.8,76.6 C81.4,71 82.2,65 82.2,62 C82.2,49.6 72.4,39.8 60,39.8 z M60,59.8 C58.8,59.8 57.6,60.2 56.6,61 C55.6,61.8 55,63 54.8,64.2 C54.4,66.8 56.2,69.4 58.8,69.8 C61.4,70.2 64,68.4 64.4,65.8 C64.8,63.2 63,60.6 60.4,60.2 C60.2,60 60,59.8 60,59.8 z"/>
+                </svg>
+                <svg class="fingerprint-circles" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+                    <circle id="circle1" cx="60" cy="60" r="45" fill="none" stroke="var(--primary-red)" stroke-width="3"
+                        stroke-dasharray="283" stroke-dashoffset="283" transform="rotate(0 60 60)"
+                        class="circle-progress"></circle>
+                    <circle id="circle2" cx="60" cy="60" r="45" fill="none" stroke="var(--primary-red)" stroke-width="3"
+                        stroke-dasharray="283" stroke-dashoffset="283" transform="rotate(90 60 60)"
+                        class="circle-progress"></circle>
+                    <circle id="circle3" cx="60" cy="60" r="45" fill="none" stroke="var(--primary-red)" stroke-width="3"
+                        stroke-dasharray="283" stroke-dashoffset="283" transform="rotate(180 60 60)"
+                        class="circle-progress"></circle>
+                    <circle id="circle4" cx="60" cy="60" r="45" fill="none" stroke="var(--primary-red)" stroke-width="3"
+                        stroke-dasharray="283" stroke-dashoffset="283" transform="rotate(270 60 60)"
+                        class="circle-progress"></circle>
+                </svg>
+            </div>
+            <p id="enrollment-step-text">Scan 1 of 4: Place your finger on the sensor</p>
+            <div class="enrollment-progress">
+                <div class="progress-circle" id="progress-1"></div>
+                <div class="progress-circle" id="progress-2"></div>
+                <div class="progress-circle" id="progress-3"></div>
+                <div class="progress-circle" id="progress-4"></div>
+            </div>
+            <button class="btn btn-outlined" id="cancel-enrollment-btn">Cancel</button>
+        </div>
+    </div>
+
+    <!-- Fingerprint Verification Screen -->
+    <div class="screen" id="fingerprint-verify-screen">
+        <div class="container">
+            <h1>Fingerprint Verification</h1>
+            <h2>Please Place Your Finger on the Sensor</h2>
+            <div class="icon-container">
+                <svg class="fingerprint-icon pulse-animation" viewBox="0 0 463 463" xmlns="http://www.w3.org/2000/svg">
+                    <!-- <circle class="circle" cx="250" cy="250" r="245" fill="transparent" stroke="var(--mid-gray)" stroke-width="4"></circle> -->
+
+                    <path fill="var(--primary-red)"
+                        d="M259.476,280.364V247.5c0-12.958-10.542-23.5-23.5-23.5s-23.5,10.542-23.5,23.5v29.672 c0,35.757-13.173,70.087-37.094,96.665l-32.981,36.646c-2.771,3.079-2.521,7.821,0.558,10.593c3.078,2.771,7.82,2.521,10.592-0.558 l32.981-36.646c26.403-29.338,40.944-67.231,40.944-106.7V247.5c0-4.687,3.813-8.5,8.5-8.5s8.5,3.813,8.5,8.5v32.864 c0,44.003-16.301,86.167-45.901,118.727l-32.149,35.364c-2.786,3.064-2.56,7.809,0.505,10.595c1.437,1.307,3.242,1.95,5.042,1.95 c2.04,0,4.072-0.827,5.552-2.455l32.148-35.364C241.789,373.854,259.476,328.106,259.476,280.364z">
+                    </path>
+                    <path fill="var(--primary-red)"
+                        d="M291.476,247.5c0-30.603-24.897-55.5-55.5-55.5s-55.5,24.897-55.5,55.5v29.672c0,27.839-10.256,54.566-28.879,75.258 l-23.447,26.053c-2.771,3.079-2.521,7.821,0.558,10.593c3.079,2.771,7.82,2.519,10.592-0.558l23.447-26.053 c21.106-23.451,32.73-53.742,32.73-85.293V247.5c0-22.332,18.168-40.5,40.5-40.5c22.332,0,40.5,18.168,40.5,40.5v32.864 c0,51.979-19.256,101.789-54.223,140.252l-27.125,29.839c-2.787,3.064-2.561,7.809,0.504,10.595c1.437,1.307,3.242,1.95,5.042,1.95 c2.04,0,4.072-0.827,5.552-2.455l27.126-29.839c37.481-41.23,58.123-94.622,58.123-150.342V247.5z">
+                    </path>
+                    <path fill="var(--primary-red)"
+                        d="M323.476,247.5c0-48.248-39.252-87.5-87.5-87.5s-87.5,39.252-87.5,87.5v29.672c0,19.92-7.339,39.045-20.665,53.851 l-21.112,23.458c-2.771,3.079-2.521,7.821,0.558,10.593c3.078,2.771,7.821,2.519,10.592-0.558l21.112-23.458 c15.809-17.565,24.515-40.254,24.515-63.886V247.5c0-39.977,32.523-72.5,72.5-72.5s72.5,32.523,72.5,72.5v32.864 c0,59.958-22.212,117.412-62.545,161.777l-7.507,8.258c-2.786,3.065-2.56,7.809,0.505,10.595c1.437,1.306,3.243,1.95,5.042,1.95 c2.04,0,4.072-0.827,5.552-2.455l7.506-8.258c42.848-47.133,66.446-108.169,66.446-171.867V247.5z">
+                    </path>
+                    <path fill="var(--primary-red)"
+                        d="M116.476,247.5c0,4.143,3.358,7.5,7.5,7.5s7.5-3.357,7.5-7.5c0-25.255,9.169-49.651,25.819-68.695 c16.495-18.867,39.134-31.205,63.746-34.741c4.1-0.589,6.946-4.391,6.357-8.49c-0.589-4.1-4.394-6.942-8.49-6.357 c-28.16,4.046-54.052,18.15-72.906,39.716C126.962,190.71,116.476,218.613,116.476,247.5z">
+                    </path>
+                    <path fill="var(--primary-red)"
+                        d="M131.476,277.172c0-4.143-3.358-7.5-7.5-7.5s-7.5,3.357-7.5,7.5c0,12.002-4.421,23.523-12.449,32.443l-18.779,20.867 c-2.771,3.078-2.521,7.82,0.558,10.592c1.434,1.29,3.227,1.925,5.015,1.925c2.052,0,4.097-0.838,5.577-2.483l18.779-20.866 C125.687,307.971,131.476,292.886,131.476,277.172z">
+                    </path>
+                    <path fill="var(--primary-red)"
+                        d="M340.755,344.123c-4.009-1.044-8.105,1.351-9.155,5.357c-2.769,10.579-6.213,21.096-10.24,31.258 c-1.526,3.851,0.359,8.21,4.21,9.735c0.907,0.359,1.841,0.529,2.761,0.529c2.985,0,5.808-1.795,6.975-4.739 c4.249-10.725,7.884-21.822,10.806-32.986C347.16,349.271,344.761,345.172,340.755,344.123z">
+                    </path>
+                    <path fill="var(--primary-red)"
+                        d="M315.791,158.632c-3.081-2.771-7.823-2.517-10.592,0.563s-2.517,7.822,0.563,10.591 c22.061,19.832,34.713,48.157,34.713,77.714v32.864c0,12.473-0.86,25.042-2.557,37.359c-0.565,4.104,2.303,7.888,6.406,8.453 c0.347,0.048,0.692,0.071,1.033,0.071c3.688,0,6.903-2.722,7.42-6.478c1.79-12.993,2.698-26.251,2.698-39.406V247.5 C355.476,213.695,341.011,181.304,315.791,158.632z">
+                    </path>
+                    <path fill="var(--primary-red)"
+                        d="M280.729,153.076c1.041,0.496,2.138,0.73,3.219,0.73c2.803,0,5.492-1.579,6.777-4.278c1.781-3.739,0.192-8.215-3.547-9.995 c-10.806-5.145-22.291-8.616-34.136-10.317c-4.106-0.585-7.901,2.258-8.49,6.357s2.257,7.901,6.357,8.49 C261.257,145.55,271.289,148.582,280.729,153.076z">
+                    </path>
+                    <path fill="var(--primary-red)"
+                        d="M235.976,96c-2.806,0-5.644,0.078-8.437,0.232c-4.136,0.228-7.304,3.766-7.076,7.901c0.229,4.136,3.763,7.321,7.902,7.075 c2.519-0.139,5.079-0.209,7.61-0.209c75.266,0,136.5,61.233,136.5,136.5v32.864c0,4.143,3.358,7.5,7.5,7.5s7.5-3.357,7.5-7.5V247.5 C387.476,163.963,319.513,96,235.976,96z">
+                    </path>
+                    <path fill="var(--primary-red)"
+                        d="M153.972,136.693c1.477,0,2.97-0.436,4.275-1.343c12.478-8.677,26.182-15.155,40.733-19.258 c3.987-1.124,6.308-5.268,5.184-9.254s-5.269-6.304-9.254-5.184c-16.16,4.556-31.376,11.749-45.226,21.379 c-3.401,2.365-4.241,7.039-1.876,10.439C149.265,135.57,151.599,136.693,153.972,136.693z">
+                    </path>
+                    <path fill="var(--primary-red)"
+                        d="M99.476,277.172V247.5c0-34.89,13.213-68.118,37.205-93.565c2.841-3.014,2.702-7.76-0.312-10.602 s-7.761-2.701-10.602,0.312C99.14,171.886,84.476,208.77,84.476,247.5v29.672c0,4.083-1.504,8.002-4.234,11.035l-9.248,10.275 c-2.771,3.079-2.521,7.821,0.558,10.592c1.433,1.291,3.227,1.926,5.015,1.926c2.052,0,4.096-0.837,5.577-2.482l9.248-10.275 C96.605,292.449,99.476,284.966,99.476,277.172z">
+                    </path>
+                    <path fill="var(--primary-red)"
+                        d="M409.951,189.104c-8.226-24.446-21.299-46.531-38.856-65.642c-2.803-3.05-7.547-3.252-10.597-0.449 c-3.05,2.803-3.251,7.547-0.449,10.598c16.127,17.554,28.134,37.834,35.686,60.276c1.054,3.133,3.976,5.11,7.107,5.11 c0.793,0,1.6-0.127,2.393-0.394C409.16,197.282,411.272,193.029,409.951,189.104z">
+                    </path>
+                    <path fill="var(--primary-red)"
+                        d="M295.247,73.822c-3.917-1.341-8.183,0.748-9.524,4.668c-1.341,3.919,0.749,8.183,4.668,9.523 c16.538,5.659,32.065,13.857,46.15,24.369c1.347,1.005,2.92,1.489,4.48,1.489c2.286,0,4.544-1.041,6.017-3.015 c2.478-3.319,1.794-8.019-1.525-10.496C330.176,88.916,313.264,79.986,295.247,73.822z">
+                    </path>
+                    <path fill="var(--primary-red)"
+                        d="M119.442,125.908C150.991,95.659,192.377,79,235.976,79c8.096,0,16.237,0.583,24.196,1.731 c4.103,0.598,7.903-2.252,8.495-6.352c0.592-4.1-2.251-7.902-6.351-8.494C253.648,64.635,244.786,64,235.976,64 c-47.487,0-92.56,18.141-126.915,51.081c-34.248,32.838-54.277,76.905-56.397,124.084c-0.186,4.138,3.018,7.644,7.155,7.829 c0.115,0.006,0.229,0.008,0.343,0.008c3.987,0,7.306-3.14,7.487-7.163C69.594,196.527,87.988,156.066,119.442,125.908z">
+                    </path>
+                    <path fill="var(--primary-red)"
+                        d="M235.976,32c-16.772,0-33.485,1.944-49.674,5.778c-4.031,0.954-6.524,4.996-5.57,9.026c0.955,4.03,4.997,6.524,9.027,5.569 C204.817,48.809,220.366,47,235.976,47c54.996,0,106.332,21.911,144.55,61.695c1.473,1.533,3.439,2.305,5.41,2.305 c1.869,0,3.741-0.694,5.195-2.091c2.987-2.87,3.083-7.618,0.213-10.604c-19.913-20.729-43.304-37.036-69.522-48.465 C294.666,38.002,265.783,32,235.976,32z">
+                    </path>
+                    <path fill="var(--primary-red)"
+                        d="M67.507,125.404c1.372,1.074,3.001,1.595,4.619,1.595c2.227,0,4.431-0.987,5.91-2.876 c21.375-27.302,49.515-48.717,81.377-61.932c3.826-1.587,5.642-5.975,4.055-9.801s-5.977-5.644-9.801-4.055 c-34.241,14.201-64.478,37.21-87.441,66.539C63.672,118.137,64.246,122.851,67.507,125.404z">
+                    </path>
+                    <path fill="var(--primary-red)"
+                        d="M131.983,38.725c1.094,0,2.205-0.24,3.255-0.748C166.816,22.73,200.709,15,235.976,15c18.378,0,36.682,2.162,54.401,6.426 c4.025,0.966,8.077-1.51,9.046-5.537c0.969-4.027-1.51-8.078-5.538-9.047C275.019,2.302,255.535,0,235.976,0 c-37.544,0-73.631,8.232-107.259,24.469c-3.73,1.801-5.294,6.285-3.493,10.015C126.517,37.163,129.195,38.725,131.983,38.725z">
+                    </path>
+                    <path fill="var(--primary-red)"
+                        d="M321.724,31.383c7.732,3.079,15.385,6.619,22.746,10.52c1.119,0.594,2.321,0.875,3.505,0.875 c2.688,0,5.287-1.449,6.633-3.99c1.939-3.66,0.545-8.199-3.115-10.139c-7.837-4.153-15.986-7.922-24.22-11.201 c-3.849-1.533-8.21,0.345-9.743,4.192C315.998,25.488,317.876,29.851,321.724,31.383z">
+                    </path>
+
+                    <!-- <path fill="var(--primary-red)" d="M60,20 C36.8,20 18,38.8 18,62 C18,65.8 20,77.6 23.2,86.2 C24.2,89.4 27.8,90.6 30.6,88.8 C33.4,87 34.2,83.4 33,80.6 C30.4,73.4 28.8,64.4 28.8,62 C28.8,44.6 42.6,30.8 60,30.8 C77.4,30.8 91.2,44.6 91.2,62 C91.2,67.4 90.2,72.6 89.2,75.4 C88.4,78 89.8,80.8 92.2,81.6 C94.6,82.4 97.4,81 98.2,78.6 C99.6,74.8 100.8,68.8 100.8,62 C100.8,38.8 83.2,20 60,20 z M60,39.8 C47.6,39.8 37.8,49.6 37.8,62 C37.8,66 38.6,72 40.2,77.6 C41,80.2 43.8,81.6 46.4,80.8 C49,80 50.4,77.2 49.6,74.6 C48.4,70.2 47.8,65.4 47.8,62 C47.8,55.2 53.2,49.8 60,49.8 C66.8,49.8 72.2,55.2 72.2,62 C72.2,64.4 71.6,69.2 70.4,73.6 C69.6,76.2 71,79 73.6,79.8 C76.2,80.6 79,79.2 79.8,76.6 C81.4,71 82.2,65 82.2,62 C82.2,49.6 72.4,39.8 60,39.8 z M60,59.8 C58.8,59.8 57.6,60.2 56.6,61 C55.6,61.8 55,63 54.8,64.2 C54.4,66.8 56.2,69.4 58.8,69.8 C61.4,70.2 64,68.4 64.4,65.8 C64.8,63.2 63,60.6 60.4,60.2 C60.2,60 60,59.8 60,59.8 z"/> -->
+                </svg>
+                <div class="scan-animation"></div> <!-- Scanning Effect -->
+
+                <p class="timer-text">Waiting for fingerprint... <span id="verify-timer">30</span>s</p>
+            </div>
+            <button class="btn btn-outlined" id="cancel-verify-btn">Cancel</button>
+        </div>
+    </div>
+
+    <!-- Success Screen -->
+    <div class="screen" id="success-screen">
+        <div class="container">
+            <h1>Authentication Successful</h1>
+            <div id="success-animation">
+                <svg class="checkmark" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 52 52">
+                    <circle class="checkmark-circle" cx="26" cy="26" r="25" fill="none" />
+                    <path class="checkmark-check" fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8" />
+                </svg>
+            </div>
+            <p id="success-message">Your fingerprint has been verified successfully!</p>
+            <button class="btn btn-success" id="continue-btn">Continue to Dashboard</button>
+        </div>
+    </div>
+
+    <!-- Error Screen -->
+    <div class="screen" id="error-screen">
+        <div class="container">
+            <h1>Authentication Failed</h1>
+            <div class="error-icon">
+                <div class="circle"></div>
+                <div class="line"></div>
+                <div class="line"></div>
+            </div>
+            <p id="error-message">Your fingerprint couldn't be verified. Please try again.</p>
+            <div class="status-message error-message" id="detailed-error">
+                Error: Fingerprint does not match the stored template.
+            </div>
+            <button class="btn" id="retry-btn">Try Again</button>
+            <button class="btn btn-outlined" id="back-to-login-btn">Back to Login</button>
+        </div>
+    </div>
+
+    <!-- Enrollment Success Screen -->
+    <div class="screen" id="enrollment-success-screen">
+        <div class="container">
+            <h1>Enrollment Successful</h1>
+            <div id="success-animation">
+                <svg class="checkmark" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 52 52">
+                    <circle class="checkmark-circle" cx="26" cy="26" r="25" fill="none" />
+                    <path class="checkmark-check" fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8" />
+                </svg>
+            </div>
+            <p>Your fingerprint has been successfully enrolled in our system.</p>
+            <button class="btn btn-success" id="proceed-to-login-btn">Proceed to Login</button>
+        </div>
+
+    </div>
+
+    <!-- Enrollment Error Screen -->
+    <div class="screen" id="enrollment-error-screen">
+        <div class="container">
+            <h1>Enrollment Failed</h1>
+            <div class="error-icon">
+                <div class="circle"></div>
+                <div class="line"></div>
+                <div class="line"></div>
+            </div>
+            <p>There was a problem enrolling your fingerprint.</p>
+            <div class="status-message error-message" id="enrollment-error-details">
+                Error: Could not complete the enrollment process. Please try again.
+            </div>
+            <button class="btn" id="retry-enrollment-btn">Try Again</button>
+            <button class="btn btn-outlined" id="enrollment-back-to-login-btn">Back to Login</button>
+        </div>
+    </div>
+
+    <!-- Loading Screen -->
+    <div class="screen" id="loading-screen">
+        <div class="container">
+            <h1>Processing</h1>
+            <div class="loading-spinner"></div>
+            <p id="loading-message">Please wait while we process your request...</p>
+        </div>
+    </div>
+
+    <div class="screen active">
+        <div class="container">
+        <button class="btn" id="flow-fingerprint-enrolled">Fingerprint Enrolled Flow</button>
+        <button class="btn" id="flow-fingerprint-not-enrolled">Fingerprint Not Enrolled Flow</button>
+        <button class="btn" id="flow-fail-api-call">Fail API Call Flow</button>
+    </div>
+    </div>
+
+    <script>
+        // DOM elements
+        const screens = {
+            login: document.getElementById('login-screen'),
+            fingerprintChoice: document.getElementById('fingerprint-choice-screen'),
+            otpVerification: document.getElementById('otp-verification-screen'),
+            enrollmentInstructions: document.getElementById('enrollment-instructions-screen'),
+            enrollmentProcess: document.getElementById('enrollment-process-screen'),
+            fingerprintVerify: document.getElementById('fingerprint-verify-screen'),
+            success: document.getElementById('success-screen'),
+            error: document.getElementById('error-screen'),
+            enrollmentSuccess: document.getElementById('enrollment-success-screen'),
+            enrollmentError: document.getElementById('enrollment-error-screen'),
+            loading: document.getElementById('loading-screen')
+        };
+
+        // Buttons
+        const loginBtn = document.getElementById('login-btn');
+        const useExistingBtn = document.getElementById('use-existing-btn');
+        const updateFingerprintBtn = document.getElementById('update-fingerprint-btn');
+        const verifyOtpBtn = document.getElementById('verify-otp-btn');
+        const resendOtpBtn = document.getElementById('resend-otp-btn');
+        const startEnrollmentBtn = document.getElementById('start-enrollment-btn');
+        const cancelEnrollmentBtn = document.getElementById('cancel-enrollment-btn');
+        const cancelVerifyBtn = document.getElementById('cancel-verify-btn');
+        const continueBtn = document.getElementById('continue-btn');
+        const retryBtn = document.getElementById('retry-btn');
+        const backToLoginBtn = document.getElementById('back-to-login-btn');
+        const proceedToLoginBtn = document.getElementById('proceed-to-login-btn');
+        const retryEnrollmentBtn = document.getElementById('retry-enrollment-btn');
+
+        const enrollmentBackToLoginBtn = document.getElementById('enrollment-back-to-login-btn');
+        const fingerPrintNotEnrolled = document.getElementById('flow-fingerprint-not-enrolled');
+        const failAPICall = document.getElementById('flow-fail-api-call');
+        let fingerprintNotEnrolledValue = false;
+        let failAPICallValue = false;
+
+        // Other elements
+        const otpInputs = document.querySelectorAll('.otp-input');
+        const otpTimer = document.getElementById('otp-timer');
+        const verifyTimer = document.getElementById('verify-timer');
+        const enrollmentStepText = document.getElementById('enrollment-step-text');
+        const progressCircles = [
+            document.getElementById('progress-1'),
+            document.getElementById('progress-2'),
+            document.getElementById('progress-3'),
+            document.getElementById('progress-4')
+        ];
+        const successMessage = document.getElementById('success-message');
+        const errorMessage = document.getElementById('error-message');
+        const detailedError = document.getElementById('detailed-error');
+        const enrollmentErrorDetails = document.getElementById('enrollment-error-details');
+        const loadingMessage = document.getElementById('loading-message');
+        const circleProgress = [
+            document.getElementById('circle1'),
+            document.getElementById('circle2'),
+            document.getElementById('circle3'),
+            document.getElementById('circle4')
+        ];
+
+        // Function to show a specific screen and hide others
+        function showScreen(screen) {
+            Object.values(screens).forEach(s => {
+                s.classList.remove('active');
+            });
+            screen.classList.add('active');
+        }
+
+        // Simulate API calls
+        function simulateApiCall(endpoint, duration = 1500) {
+            return new Promise((resolve, reject) => {
+                showScreen(screens.loading);
+                loadingMessage.textContent = `Connecting to ${endpoint}...`;
+
+                setTimeout(() => {
+                    // Simulate success with 80% probability
+                    // if (Math.random() < 0.8) {
+                    if (!failAPICallValue) {
+                        resolve({ success: true, message: "Operation completed successfully" });
+                    } else {
+                        reject({ success: false, message: "Operation failed", error: "Server error" });
+                    }
+                }, duration);
+            });
+        }
+
+        // Initialize OTP inputs
+        otpInputs.forEach((input, index) => {
+            input.addEventListener('input', (e) => {
+                if (e.target.value.length === 1) {
+                    // Move to next input
+                    if (index < otpInputs.length - 1) {
+                        otpInputs[index + 1].focus();
+                    }
+                }
+            });
+
+            input.addEventListener('keydown', (e) => {
+                if (e.key === 'Backspace' && e.target.value.length === 0) {
+                    // Move to previous input on backspace
+                    if (index > 0) {
+                        otpInputs[index - 1].focus();
+                    }
+                }
+            });
+        });
+
+        // Initialize timers
+        let otpInterval;
+        let verifyInterval;
+
+        function startOtpTimer(duration = 300) {
+            let timer = duration;
+            clearInterval(otpInterval);
+
+            otpInterval = setInterval(() => {
+                const minutes = Math.floor(timer / 60);
+                const seconds = timer % 60;
+
+                otpTimer.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+
+                if (--timer < 0) {
+                    clearInterval(otpInterval);
+                    otpTimer.textContent = "Expired";
+                }
+            }, 1000);
+        }
+
+        function startVerifyTimer(duration = 30) {
+            let timer = duration;
+            clearInterval(verifyInterval);
+
+            verifyInterval = setInterval(() => {
+                verifyTimer.textContent = timer;
+
+                if (--timer < 0) {
+                    clearInterval(verifyInterval);
+                    showScreen(screens.error);
+                    errorMessage.textContent = "Verification timed out. Please try again.";
+                    detailedError.textContent = "Error: No fingerprint detected within the time limit.";
+                }
+            }, 1000);
+        }
+
+        // Enrollment process simulation
+        let currentEnrollmentStep = 0;
+
+        function simulateEnrollmentStep() {
+            if (currentEnrollmentStep >= 4) {
+                // Enrollment complete
+                simulateApiCall('/api/fingerprint/enroll/complete')
+                    .then(() => {
+                        showScreen(screens.enrollmentSuccess);
+                    })
+                    .catch((error) => {
+                        showScreen(screens.enrollmentError);
+                        enrollmentErrorDetails.textContent = `Error: ${error.message}`;
+                    });
+                return;
+            }
+
+            enrollmentStepText.textContent = `Scan ${currentEnrollmentStep + 1} of 4: Place your finger on the sensor`;
+
+            // Simulate fingerprint reading
+            setTimeout(() => {
+                // Update progress circle
+                progressCircles[currentEnrollmentStep].classList.add('filled');
+
+                // Animate the circle segment
+                circleProgress[currentEnrollmentStep].style.strokeDashoffset = '0';
+
+                currentEnrollmentStep++;
+
+                if (currentEnrollmentStep < 4) {
+                    enrollmentStepText.textContent = `Scan ${currentEnrollmentStep} completed. Please lift your finger.`;
+
+                    // Wait and request next scan
+                    setTimeout(() => {
+                        enrollmentStepText.textContent = `Scan ${currentEnrollmentStep + 1} of 4: Place your finger on the sensor again`;
+                        // Ready for next scan
+                        setTimeout(simulateEnrollmentStep, 2000); // Simulate waiting for next finger placement
+                    }, 1500);
+                } else {
+                    enrollmentStepText.textContent = "All scans completed! Processing...";
+                    setTimeout(() => {
+                        simulateEnrollmentStep();
+                    }, 1500);
+                }
+            }, 2000);
+        }
+
+        // Event listeners
+        loginBtn.addEventListener('click', () => {
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+
+            if (!username || !password) {
+                alert("Please enter both username and password");
+                return;
+            }
+
+            simulateApiCall('/api/login')
+                .then(() => {
+                    simulateApiCall('/api/fingerprint/check')
+                        .then((data) => {
+                            // Simulate different user scenarios
+
+                            // const fingerPrintExists = Math.random() > 0.5;
+
+                            // if (fingerPrintExists) {
+                            //     showScreen(screens.fingerprintChoice);
+                            // } else {
+                            //     showScreen(screens.otpVerification);
+                            //     startOtpTimer();
+                            // }
+
+                            if (fingerprintNotEnrolledValue) {
+                                console.log("Inside finger print not enrolled")
+                                showScreen(screens.otpVerification);
+                                startOtpTimer();
+                            }
+                            else {
+                                console.log("Inside finger print enrolled")
+                                showScreen(screens.fingerprintChoice);
+                            }
+
+                        })
+                        .catch((error) => {
+                            showScreen(screens.error);
+                            errorMessage.textContent = "Failed to check fingerprint status.";
+                            detailedError.textContent = `Error: ${error.message}`;
+                        });
+                })
+                .catch((error) => {
+                    showScreen(screens.error);
+                    errorMessage.textContent = "Login failed. Please check your credentials.";
+                    detailedError.textContent = `Error: ${error.message}`;
+                });
+        });
+
+        useExistingBtn.addEventListener('click', () => {
+            showScreen(screens.fingerprintVerify);
+            startVerifyTimer();
+
+            // Simulate fingerprint verification after random time
+            setTimeout(() => {
+                clearInterval(verifyInterval);
+
+                if (Math.random() > 0.3) { // 70% success rate
+                    simulateApiCall('/api/fingerprint/verify')
+                        .then(() => {
+                            showScreen(screens.success);
+                            successMessage.textContent = "Your fingerprint has been verified successfully!";
+                        })
+                        .catch((error) => {
+                            showScreen(screens.error);
+                            errorMessage.textContent = "Fingerprint verification failed.";
+                            detailedError.textContent = `Error: ${error.message}`;
+                        });
+                } else {
+                    showScreen(screens.error);
+                    errorMessage.textContent = "Your fingerprint couldn't be verified.";
+                    detailedError.textContent = "Error: Fingerprint does not match the stored template.";
+                }
+            }, Math.random() * 5000 + 2000); // Between 2-7 seconds
+        });
+
+        updateFingerprintBtn.addEventListener('click', () => {
+            showScreen(screens.otpVerification);
+            startOtpTimer();
+        });
+
+        verifyOtpBtn.addEventListener('click', () => {
+            let otpValue = '';
+            otpInputs.forEach(input => {
+                otpValue += input.value;
+            });
+
+            if (otpValue.length !== 6) {
+                alert("Please enter all 6 digits of the OTP");
+                return;
+            }
+
+            simulateApiCall('/api/otp/verify')
+                .then(() => {
+                    showScreen(screens.enrollmentInstructions);
+                    clearInterval(otpInterval);
+                })
+                .catch((error) => {
+                    alert(`OTP verification failed: ${error.message}`);
+                });
+        });
+
+        resendOtpBtn.addEventListener('click', () => {
+            simulateApiCall('/api/otp/resend')
+                .then(() => {
+                    startOtpTimer();
+                    // Clear inputs
+                    otpInputs.forEach(input => {
+                        input.value = '';
+                    });
+                    otpInputs[0].focus();
+                })
+                .catch((error) => {
+                    alert(`Failed to resend OTP: ${error.message}`);
+                });
+        });
+
+        startEnrollmentBtn.addEventListener('click', () => {
+            showScreen(screens.enrollmentProcess);
+
+            // Reset enrollment state
+            currentEnrollmentStep = 0;
+            progressCircles.forEach(circle => circle.classList.remove('filled'));
+            circleProgress.forEach(circle => circle.style.strokeDashoffset = '283');
+
+            // Start enrollment process
+            simulateEnrollmentStep();
+        });
+
+        cancelEnrollmentBtn.addEventListener('click', () => {
+            if (confirm("Are you sure you want to cancel the enrollment process?")) {
+                showScreen(screens.enrollmentInstructions);
+            }
+        });
+
+        cancelVerifyBtn.addEventListener('click', () => {
+            clearInterval(verifyInterval);
+            showScreen(screens.login);
+        });
+
+        continueBtn.addEventListener('click', () => {
+            // Redirect to dashboard or main application
+            alert("Redirecting to dashboard...");
+            window.location.reload(); // For demo, just reload the page
+        });
+
+        retryBtn.addEventListener('click', () => {
+            showScreen(screens.fingerprintVerify);
+            startVerifyTimer();
+        });
+
+        backToLoginBtn.addEventListener('click', () => {
+            showScreen(screens.login);
+        });
+
+        proceedToLoginBtn.addEventListener('click', () => {
+            showScreen(screens.login);
+        });
+
+        retryEnrollmentBtn.addEventListener('click', () => {
+            showScreen(screens.enrollmentInstructions);
+        });
+
+        enrollmentBackToLoginBtn.addEventListener('click', () => {
+            showScreen(screens.login);
+        });
+
+        fingerPrintNotEnrolled.addEventListener('click', () => {
+            fingerprintNotEnrolledValue = true
+        });
+        enrollmentBackToLoginBtn.addEventListener('click', () => {
+            fingerprintNotEnrolledValue = false
+        });
+        failAPICall.addEventListener('click', () => {
+            failAPICallValue = true
+        });
+        
+        // Add automatic OTP input for demo purposes
+        document.addEventListener('DOMContentLoaded', () => {
+            // For demo: Auto-populate OTP when clicking into first field
+            otpInputs[0].addEventListener('focus', () => {
+                if (otpInputs[0].value === '') {
+                    // Auto populate for demo
+                    const demoOtp = '123456';
+                    setTimeout(() => {
+                        otpInputs.forEach((input, index) => {
+                            setTimeout(() => {
+                                input.value = demoOtp[index];
+                                if (index < otpInputs.length - 1) {
+                                    otpInputs[index + 1].focus();
+                                }
+                            }, index * 200);
+                        });
+                    }, 500);
+                }
+            });
+        });
+    </script>
+</body>
+
+</html>
